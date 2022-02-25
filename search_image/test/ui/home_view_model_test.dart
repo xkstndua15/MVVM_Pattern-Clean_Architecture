@@ -1,32 +1,28 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:search_image/data/photo_api_repo.dart';
-import 'package:search_image/model/photo.dart';
-import 'package:search_image/ui/home_view_model.dart';
+import 'package:search_image/data/data_source/result.dart';
+import 'package:search_image/domain/model/repository/photo_api_repo.dart';
+import 'package:search_image/domain/model/photo.dart';
+import 'package:search_image/domain/use_case/get_photos_use_case.dart';
+import 'package:search_image/presentation/home/home_view_model.dart';
 
 void main() {
   test('Stream이 잘 동작해야 한다', () async {
-    final PhotoApiRepo repo;
-    final viewModel = HomeViewModel(FakePhotoApiRepo());
+    final viewModel = HomeViewModel(GetPhotosUseCase(FakePhotoApiRepo()));
 
-    // await viewModel.fetch('apple');
-    // await viewModel.fetch('apple');
+    await viewModel.fetch('apple');
 
-    expect(
-        viewModel.photoStream,
-        emitsInOrder([
-          equals([]),
-          // equals(fakeJson.map((e) => Photo.fromJson(e)).toList()),
-          // equals(fakeJson.map((e) => Photo.fromJson(e)).toList())
-        ]));
+    final List<Photo> result = fakeJson.map((e) => Photo.fromJson(e)).toList();
+
+    expect(viewModel.state.photos, result);
   });
 }
 
 class FakePhotoApiRepo extends PhotoApiRepo {
   @override
-  Future<List<Photo>> fetch(String query) async {
+  Future<Result<List<Photo>>> fetch(String query) async {
     Future.delayed(const Duration(milliseconds: 500));
 
-    return fakeJson.map((e) => Photo.fromJson(e)).toList();
+    return Result.success(fakeJson.map((e) => Photo.fromJson(e)).toList());
   }
 }
 

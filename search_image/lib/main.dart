@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:search_image/data/pixabay_api.dart';
-import 'package:search_image/ui/home_screen.dart';
-import 'package:search_image/ui/home_view_model.dart';
 
-import 'data/photo_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:search_image/di/provider_setup.dart';
+import 'package:search_image/presentation/home/home_screen.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(MultiProvider(
+    providers: globalProviders,
+    child: const MyApp(),
+  ));
 }
 
 class MyApp extends StatelessWidget {
@@ -14,11 +16,8 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: PhotoProvider(
-        child: const HomeScreen(),
-        homeViewModel: HomeViewModel(PixabayApi()),
-      ),
+    return const MaterialApp(
+      home: HomeScreen(),
     );
   }
 }

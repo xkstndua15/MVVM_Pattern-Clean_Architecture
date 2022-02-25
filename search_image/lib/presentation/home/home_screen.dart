@@ -1,8 +1,10 @@
-import 'package:flutter/material.dart';
-import 'package:search_image/ui/widget/photo_widget.dart';
+import 'dart:async';
 
-import '../data/photo_provider.dart';
-import '../model/photo.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:search_image/presentation/home/components/photo_widget.dart';
+
+import 'home_view_model.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -13,16 +15,38 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final _controller = TextEditingController();
+  StreamSubscription? _subscription;
+
+  @override
+  void initState() {
+    super.initState();
+
+    Future.microtask(() {
+      final viewModel = context.read<HomeViewModel>();
+
+      _subscription = viewModel.eventStream.listen((event) {
+        event.when(showSnackBar: (msg) {
+          final snackBar = SnackBar(
+            content: Text(msg),
+          );
+
+          ScaffoldMessenger.of(context).showSnackBar(snackBar);
+        });
+      });
+    });
+  }
 
   @override
   void dispose() {
+    _subscription?.cancel();
     _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final homeViewModel = PhotoProvider.of(context).homeViewModel;
+    final homeViewModel = context.watch<HomeViewModel>();
+    final state = homeViewModel.state;
 
     return Scaffold(
         appBar: AppBar(
@@ -47,17 +71,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             homeViewModel.fetch(_controller.value.text);
                           }))),
             ),
-            StreamBuilder<List<Photo>>(
-                stream: homeViewModel.photoStream,
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData) {
-                    return const CircularProgressIndicator();
-                  }
-
-                  final photos = snapshot.data!;
-
-                  return Expanded(
-                      child: GridView.builder(
+            state.isLoading
+                ? const CircularProgressIndicator()
+                : Expanded(
+                    child: GridView.builder(
                     padding: const EdgeInsets.all(16.0),
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
@@ -65,12 +82,11 @@ class _HomeScreenState extends State<HomeScreen> {
                             crossAxisSpacing: 16,
                             mainAxisSpacing: 16),
                     itemBuilder: (context, index) {
-                      final photo = photos[index];
+                      final photo = state.photos[index];
                       return PhotoWidget(photo: photo);
                     },
-                    itemCount: photos.length,
-                  ));
-                })
+                    itemCount: state.photos.length,
+                  ))
           ],
         ));
   }
